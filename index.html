@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AJAX CRUD with Modal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>AJAX CRUD Page with Modal</h1>
+        
+        <button type="button" class="btn btn-primary" onclick="getData()">Get Data</button>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addModal">Add Data</button>
+        
+        <div id="student_list" class="mt-4"></div>
+    </div>
+
+    <div class="modal fade" id="addModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addModalLabel">Add New Student</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="add_name" class="form-control mb-2" placeholder="Name">
+                    <input type="number" id="add_age" class="form-control mb-2" placeholder="Age">
+                    <input type="text" id="add_major" class="form-control mb-2" placeholder="Major">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="createData()">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="updateModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="updateModalLabel">Update Student</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="update_id" class="form-control mb-2" placeholder="ID" readonly>
+                    <input type="text" id="update_name" class="form-control mb-2" placeholder="Name">
+                    <input type="number" id="update_age" class="form-control mb-2" placeholder="Age">
+                    <input type="text" id="update_major" class="form-control mb-2" placeholder="Major">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="updateData()">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function getData() {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", "https://672819eb270bd0b975546065.mockapi.io/api/v1/students");
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send();
+
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    const students = JSON.parse(xhr.responseText);
+                    displayStudents(students);
+                } else {
+                    console.log("Error:", xhr.status, xhr.statusText);
+                }
+            };
+        }
+
+        function createData() {
+            const name = document.getElementById("add_name").value;
+            const age = document.getElementById("add_age").value;
+            const major = document.getElementById("add_major").value;
+
+            if (!name || !age || !major) {
+                alert("Please enter name, age, and major.");
+                return;
+            }
+
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "https://672819eb270bd0b975546065.mockapi.io/api/v1/students");
+            xhr.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+
+            const data = JSON.stringify({ name, age, major });
+            xhr.send(data);
+
+            xhr.onload = () => {
+                if (xhr.status === 201) {
+                    alert("Data created successfully!");
+                    getData();
+                    document.querySelector('#addModal .btn-close').click();
+                } else {
+                    console.log("Error:", xhr.status, xhr.statusText);
+                }
+            };
+        }
+
+        function updateData() {
+            const id = document.getElementById("update_id").value;
+            const name = document.getElementById("update_name").value;
+            const age = document.getElementById("update_age").value;
+            const major = document.getElementById("update_major").value;
+
+            if (!id || !name || !age || !major) {
+                alert("Please enter ID, name, age, and major.");
+                return;
+            }
+
+            const xhr = new XMLHttpRequest();
+            xhr.open("PUT", `https://672819eb270bd0b975546065.mockapi.io/api/v1/students/${id}`);
+            xhr.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+
+            const data = JSON.stringify({ name, age, major });
+            xhr.send(data);
+
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    alert("Data updated successfully!");
+                    getData();
+                    document.querySelector('#updateModal .btn-close').click();
+                } else {
+                    console.log("Error:", xhr.status, xhr.statusText);
+                }
+            };
+        }
+
+        function displayStudents(students) {
+            const studentList = document.getElementById("student_list");
+            studentList.innerHTML = "";
+
+            students.forEach(student => {
+                const studentDiv = document.createElement("div");
+                studentDiv.className = "d-flex justify-content-between align-items-center border p-2 mb-2";
+                studentDiv.innerHTML = `
+                    <span>ID: ${student.id}, Name: ${student.name}, Age: ${student.age}, Major: ${student.major}</span>
+                    <button class="btn btn-warning btn-sm" onclick="populateUpdateModal(${student.id}, '${student.name}', ${student.age}, '${student.major}')" data-bs-toggle="modal" data-bs-target="#updateModal">Edit</button>
+                `;
+                studentList.appendChild(studentDiv);
+            });
+        }
+
+        function populateUpdateModal(id, name, age, major) {
+            document.getElementById("update_id").value = id;
+            document.getElementById("update_name").value = name;
+            document.getElementById("update_age").value = age;
+            document.getElementById("update_major").value = major;
+        }
+    </script>
+</body>
+</html>
